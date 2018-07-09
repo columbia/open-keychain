@@ -70,6 +70,7 @@ import org.sufficientlysecure.keychain.pgp.exception.PgpKeyNotFoundException;
 import org.sufficientlysecure.keychain.provider.ApiDataAccessObject;
 import org.sufficientlysecure.keychain.provider.AutocryptPeerDataAccessObject;
 import org.sufficientlysecure.keychain.provider.CachedPublicKeyRing;
+import org.sufficientlysecure.keychain.provider.EncryptOnReceiptKeyDataAccessObject;
 import org.sufficientlysecure.keychain.provider.KeyRepository;
 import org.sufficientlysecure.keychain.provider.KeychainContract;
 import org.sufficientlysecure.keychain.provider.KeychainContract.KeyRings;
@@ -894,6 +895,25 @@ public class OpenPgpService extends Service {
         }
     }
 
+    private Intent addEncryptOnReceiptKey(Intent data) {
+        try {
+            EncryptOnReceiptKeyDataAccessObject e3KeyDao = new EncryptOnReceiptKeyDataAccessObject(getBaseContext(),
+                    mApiPermissionHelper.getCurrentCallingPackage());
+            EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
+            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
+            byte[] keyToAdd = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+
+            eorInteractor.updateEncryptOnReceiptKey(keyId, keyToAdd);
+
+            Intent result = new Intent();
+            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+            return result;
+        } catch (Exception e) {
+            Timber.d(e, "exception in addEncryptOnReceiptKey");
+            return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, e.getMessage());
+        }
+    }
+
     private Intent checkPermissionImpl(@NonNull Intent data) {
         Intent permissionIntent = mApiPermissionHelper.isAllowedOrReturnIntent(data);
         if (permissionIntent != null) {
@@ -1087,6 +1107,9 @@ public class OpenPgpService extends Service {
             }
             case OpenPgpApi.ACTION_UPDATE_AUTOCRYPT_PEER: {
                 return updateAutocryptPeerImpl(data);
+            }
+            case OpenPgpApi.ACTION_ADD_ENCRYPT_ON_RECEIPT_KEY: {
+                return addEncryptOnReceiptKey(data);
             }
             default: {
                 return null;

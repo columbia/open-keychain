@@ -113,6 +113,13 @@ public class KeychainContract {
         String GOSSIP_ORIGIN = "gossip_origin";
     }
 
+    interface ApiEncryptOnReceiptKeyColumns {
+        String PACKAGE_NAME = "package_name";
+        String IDENTIFIER = "identifier";
+
+        String MASTER_KEY_ID = "master_key_id";
+    }
+
     public static final String CONTENT_AUTHORITY = Constants.PROVIDER_AUTHORITY;
 
     private static final Uri BASE_CONTENT_URI_INTERNAL = Uri
@@ -148,6 +155,8 @@ public class KeychainContract {
     public static final String PATH_BY_KEY_ID = "by_key_id";
 
     public static final String BASE_AUTOCRYPT_PEERS = "autocrypt_peers";
+
+    public static final String BASE_ENCRYPT_ON_RECEIPT_KEYS = "encrypt_on_receipt_peers";
 
     public static class KeyRings implements BaseColumns, KeysColumns, UserPacketsColumns {
         public static final String MASTER_KEY_ID = KeysColumns.MASTER_KEY_ID;
@@ -397,6 +406,33 @@ public class KeychainContract {
 
         public static Uri buildByPackageNameAndAutocryptId(String packageName, String autocryptPeer) {
             return CONTENT_URI.buildUpon().appendPath(PATH_BY_PACKAGE_NAME).appendPath(packageName).appendPath(autocryptPeer).build();
+        }
+
+        public static Uri buildByMasterKeyId(long masterKeyId) {
+            return CONTENT_URI.buildUpon().appendPath(PATH_BY_KEY_ID).appendPath(Long.toString(masterKeyId)).build();
+        }
+    }
+
+    public static class ApiEncryptOnReceiptKey implements ApiEncryptOnReceiptKeyColumns, BaseColumns {
+        public static final String PACKAGE_NAME = "package_name";
+        public static final String IDENTIFIER = "identifier";
+
+        public static final Uri CONTENT_URI = BASE_CONTENT_URI_INTERNAL.buildUpon()
+                .appendPath(BASE_ENCRYPT_ON_RECEIPT_KEYS).build();
+        public static final String KEY_IS_REVOKED = "key_is_revoked";
+        public static final String KEY_IS_EXPIRED = "key_is_expired";
+        public static final String KEY_IS_VERIFIED = "key_is_verified";
+
+        public static Uri buildByKeyUri(Uri uri) {
+            return CONTENT_URI.buildUpon().appendPath(PATH_BY_KEY_ID).appendPath(uri.getPathSegments().get(1)).build();
+        }
+
+        public static Uri buildByPackageName(String packageName) {
+            return CONTENT_URI.buildUpon().appendPath(PATH_BY_PACKAGE_NAME).appendPath(packageName).build();
+        }
+
+        public static Uri buildByPackageNameAndKeyId(String packageName, String keyId) {
+            return CONTENT_URI.buildUpon().appendPath(PATH_BY_PACKAGE_NAME).appendPath(packageName).appendPath(keyId).build();
         }
 
         public static Uri buildByMasterKeyId(long masterKeyId) {
