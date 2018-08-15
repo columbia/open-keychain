@@ -156,7 +156,7 @@ public class KeychainContract {
 
     public static final String BASE_AUTOCRYPT_PEERS = "autocrypt_peers";
 
-    public static final String BASE_ENCRYPT_ON_RECEIPT_KEYS = "encrypt_on_receipt_peers";
+    public static final String BASE_ENCRYPT_ON_RECEIPT_KEYS = "encrypt_on_receipt_keys";
 
     public static class KeyRings implements BaseColumns, KeysColumns, UserPacketsColumns {
         public static final String MASTER_KEY_ID = KeysColumns.MASTER_KEY_ID;

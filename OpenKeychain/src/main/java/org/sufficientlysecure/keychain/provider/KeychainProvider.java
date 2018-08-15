@@ -41,6 +41,8 @@ import org.sufficientlysecure.keychain.pgp.WrappedUserAttribute;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiAllowedKeys;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiApps;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiAutocryptPeer;
+import org.sufficientlysecure.keychain.provider.KeychainContract.ApiEncryptOnReceiptKey;
+import org.sufficientlysecure.keychain.provider.KeychainContract.ApiEncryptOnReceiptKeyColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.Certs;
 import org.sufficientlysecure.keychain.provider.KeychainContract.KeyRingData;
 import org.sufficientlysecure.keychain.provider.KeychainContract.KeyRings;
@@ -227,8 +229,8 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
          * Encrypt on receipt (E3)
          *
          * <pre>
-         * encrypt_on_receipt_peers/by_key_id/_
-         * encrypt_on_receipt_peers/by_package_name/_
+         * encrypt_on_receipt_keys/by_key_id/_
+         * encrypt_on_receipt_keys/by_package_name/_
          * </pre>
          */
         matcher.addURI(authority, KeychainContract.BASE_ENCRYPT_ON_RECEIPT_KEYS + "/" +
@@ -1156,6 +1158,23 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
                 }
                 case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME: {
                     Timber.d("update case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME");
+                    String packageName = uri.getPathSegments().get(2);
+                    String identifier = uri.getLastPathSegment();
+                    values.put(ApiEncryptOnReceiptKey.PACKAGE_NAME, packageName);
+                    values.put(ApiEncryptOnReceiptKey.IDENTIFIER, identifier);
+
+                    int updated = db.update(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, values,
+                            ApiEncryptOnReceiptKey.PACKAGE_NAME + "=? AND " + ApiEncryptOnReceiptKey.IDENTIFIER + "=?",
+                            new String[] { packageName, identifier });
+                    if (updated == 0) {
+                        db.insertOrThrow(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, null, values);
+                    }
+
+                    Long masterKeyId = values.getAsLong(ApiEncryptOnReceiptKey.MASTER_KEY_ID);
+                    if (masterKeyId != null) {
+                        contentResolver.notifyChange(KeyRings.buildGenericKeyRingUri(masterKeyId), null);
+                    }
+
                     break;
                 }
                 default: {

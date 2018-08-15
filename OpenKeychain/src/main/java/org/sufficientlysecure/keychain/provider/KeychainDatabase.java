@@ -34,6 +34,7 @@ import org.sufficientlysecure.keychain.Constants;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiAppsAllowedKeysColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiAppsColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiAutocryptPeerColumns;
+import org.sufficientlysecure.keychain.provider.KeychainContract.ApiEncryptOnReceiptKeyColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.CertsColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.KeyRingsColumns;
 import org.sufficientlysecure.keychain.provider.KeychainContract.KeySignaturesColumns;
@@ -55,7 +56,7 @@ import timber.log.Timber;
  */
 public class KeychainDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "openkeychain.db";
-    private static final int DATABASE_VERSION = 25;
+    private static final int DATABASE_VERSION = 26;
     private Context mContext;
 
     public interface Tables {
@@ -70,6 +71,7 @@ public class KeychainDatabase extends SQLiteOpenHelper {
         String API_ALLOWED_KEYS = "api_allowed_keys";
         String OVERRIDDEN_WARNINGS = "overridden_warnings";
         String API_AUTOCRYPT_PEERS = "api_autocrypt_peers";
+        String API_ENCRYPT_ON_RECEIPT_KEYS = "api_autocrypt_peers";
     }
 
     private static final String CREATE_KEYRINGS_PUBLIC =
@@ -187,6 +189,17 @@ public class KeychainDatabase extends SQLiteOpenHelper {
                         + Tables.API_APPS + "(" + ApiAppsColumns.PACKAGE_NAME + ") ON DELETE CASCADE"
                 + ")";
 
+    private static final String CREATE_API_ENCRYPT_ON_RECEIPT_KEYS =
+            "CREATE TABLE IF NOT EXISTS " + Tables.API_ENCRYPT_ON_RECEIPT_KEYS + " ("
+                    + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + " TEXT NOT NULL, "
+                    + ApiEncryptOnReceiptKeyColumns.IDENTIFIER + " TEXT NOT NULL, "
+                    + ApiEncryptOnReceiptKeyColumns.MASTER_KEY_ID + " INTEGER NULL, "
+                    + "PRIMARY KEY(" + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + ", "
+                    + ApiEncryptOnReceiptKeyColumns.IDENTIFIER + "), "
+                    + "FOREIGN KEY(" + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + ") REFERENCES "
+                    + Tables.API_APPS + "(" + ApiAppsColumns.PACKAGE_NAME + ") ON DELETE CASCADE"
+                    + ")";
+
     private static final String CREATE_API_APPS =
             "CREATE TABLE IF NOT EXISTS " + Tables.API_APPS + " ("
                 + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -232,6 +245,7 @@ public class KeychainDatabase extends SQLiteOpenHelper {
         db.execSQL(CREATE_API_APPS_ALLOWED_KEYS);
         db.execSQL(CREATE_OVERRIDDEN_WARNINGS);
         db.execSQL(CREATE_API_AUTOCRYPT_PEERS);
+        db.execSQL(CREATE_API_ENCRYPT_ON_RECEIPT_KEYS);
 
         db.execSQL("CREATE INDEX keys_by_rank ON keys (" + KeysColumns.RANK + ", " + KeysColumns.MASTER_KEY_ID + ");");
         db.execSQL("CREATE INDEX uids_by_rank ON user_packets (" + UserPacketsColumns.RANK + ", "
@@ -456,6 +470,8 @@ public class KeychainDatabase extends SQLiteOpenHelper {
                 db.execSQL("CREATE INDEX IF NOT EXISTS uids_by_email ON user_packets (email);");
                 db.execSQL("DROP INDEX keys_by_rank");
                 db.execSQL("CREATE INDEX keys_by_rank ON keys(rank, master_key_id);");
+            case 25:
+                db.execSQL(CREATE_API_ENCRYPT_ON_RECEIPT_KEYS);
         }
     }
 
