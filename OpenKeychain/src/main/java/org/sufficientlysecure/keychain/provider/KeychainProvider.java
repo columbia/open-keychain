@@ -90,6 +90,9 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
 
     private static final int KEY_SIGNATURES = 700;
 
+    private static final int ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID = 801;
+    private static final int ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME = 802;
+
     protected UriMatcher mUriMatcher;
 
     /**
@@ -219,6 +222,19 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
                 KeychainContract.PATH_BY_PACKAGE_NAME + "/*", AUTOCRYPT_PEERS_BY_PACKAGE_NAME);
         matcher.addURI(authority, KeychainContract.BASE_AUTOCRYPT_PEERS + "/" +
                 KeychainContract.PATH_BY_PACKAGE_NAME + "/*/*", AUTOCRYPT_PEERS_BY_PACKAGE_NAME_AND_TRUST_ID);
+
+        /**
+         * Encrypt on receipt (E3)
+         *
+         * <pre>
+         * encrypt_on_receipt_peers/by_key_id/_
+         * encrypt_on_receipt_peers/by_package_name/_
+         * </pre>
+         */
+        matcher.addURI(authority, KeychainContract.BASE_ENCRYPT_ON_RECEIPT_KEYS + "/" +
+                KeychainContract.PATH_BY_KEY_ID + "/*", ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID);
+        matcher.addURI(authority, KeychainContract.BASE_ENCRYPT_ON_RECEIPT_KEYS + "/" +
+                KeychainContract.PATH_BY_PACKAGE_NAME + "/*/*", ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME);
 
 
         /**
@@ -1136,6 +1152,10 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
                         contentResolver.notifyChange(KeyRings.buildGenericKeyRingUri(gossipMasterKeyId), null);
                     }
 
+                    break;
+                }
+                case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME: {
+                    Timber.d("update case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME");
                     break;
                 }
                 default: {

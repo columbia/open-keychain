@@ -8,6 +8,8 @@ import android.net.Uri;
 
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiEncryptOnReceiptKey;
 
+import timber.log.Timber;
+
 /**
  * Created on 7/5/2018.
  *
@@ -51,6 +53,8 @@ public class EncryptOnReceiptKeyDataAccessObject {
         cv.put(ApiEncryptOnReceiptKey.MASTER_KEY_ID, newMasterKeyId);
 
         Uri uri = ApiEncryptOnReceiptKey.buildByPackageNameAndKeyId(packageName, Long.toString(keyId));
+
+        Timber.d("updateKey generated uri=%s", uri.getPath());
 
         queryInterface.update(uri, cv, null, null);
     }

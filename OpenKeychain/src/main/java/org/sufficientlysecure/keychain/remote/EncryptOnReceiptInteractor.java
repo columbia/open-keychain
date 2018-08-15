@@ -42,6 +42,8 @@ public class EncryptOnReceiptInteractor {
             return;
         }
 
+        Timber.d("updateEncryptOnReceiptKey saveKeyringResult.savedMasterKeyId=%s", saveKeyringResult.savedMasterKeyId);
+
         Long newMasterKeyId = saveKeyringResult.savedMasterKeyId;
         e3KeyDataDao.updateKey(keyId, newMasterKeyId);
     }
