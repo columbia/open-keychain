@@ -903,8 +903,11 @@ public class OpenPgpService extends Service {
             EncryptOnReceiptKeyDataAccessObject e3KeyDao = new EncryptOnReceiptKeyDataAccessObject(getBaseContext(),
                     mApiPermissionHelper.getCurrentCallingPackage());
             EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
+            // TODO: Assert that these values exist
             long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
             byte[] keyToAdd = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+
+            Timber.d("addEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToAdd);
 
             eorInteractor.updateEncryptOnReceiptKey(keyId, keyToAdd);
 
