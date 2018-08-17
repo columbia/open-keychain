@@ -236,7 +236,7 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
         matcher.addURI(authority, KeychainContract.BASE_ENCRYPT_ON_RECEIPT_KEYS + "/" +
                 KeychainContract.PATH_BY_KEY_ID + "/*", ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID);
         matcher.addURI(authority, KeychainContract.BASE_ENCRYPT_ON_RECEIPT_KEYS + "/" +
-                KeychainContract.PATH_BY_PACKAGE_NAME + "/*/*", ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME);
+                KeychainContract.PATH_BY_PACKAGE_NAME + "/*", ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME);
 
 
         /**
@@ -837,6 +837,30 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
 
                 break;
             }
+            case ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID:
+            case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME: {
+                HashMap<String, String> projectionMap = new HashMap<>();
+                projectionMap.put(ApiEncryptOnReceiptKey._ID, Tables.API_ENCRYPT_ON_RECEIPT_KEYS + ".oid AS " + ApiEncryptOnReceiptKey._ID);
+                projectionMap.put(ApiEncryptOnReceiptKey.MASTER_KEY_ID, Tables.API_ENCRYPT_ON_RECEIPT_KEYS + "." + ApiEncryptOnReceiptKey.MASTER_KEY_ID);
+
+                qb.setProjectionMap(projectionMap);
+                qb.setTables(Tables.API_ENCRYPT_ON_RECEIPT_KEYS +
+                        " LEFT JOIN " + Tables.KEYS + " AS ac_key" +
+                        " ON (ac_key." + Keys.MASTER_KEY_ID + " = " + Tables.API_ENCRYPT_ON_RECEIPT_KEYS + "." + ApiEncryptOnReceiptKey.MASTER_KEY_ID +
+                        ")"
+                );
+
+                Timber.d("KeychainProvider got EOR case (%s) with qb tables=%s", match, qb.getTables());
+
+                if (match == ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID) {
+                    long masterKeyId = Long.parseLong(uri.getLastPathSegment());
+
+                    qb.appendWhere(Tables.API_ENCRYPT_ON_RECEIPT_KEYS + "." + ApiEncryptOnReceiptKey.MASTER_KEY_ID + " = ");
+                    qb.appendWhere(Long.toString(masterKeyId));
+                }
+
+                break;
+            }
             default: {
                 throw new IllegalArgumentException("Unknown URI " + uri + " (" + match + ")");
             }
@@ -1156,16 +1180,10 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
 
                     break;
                 }
-                case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME: {
-                    Timber.d("update case ENCRYPT_ON_RECEIPT_BY_PACKAGE_NAME");
-                    String packageName = uri.getPathSegments().get(2);
-                    String identifier = uri.getLastPathSegment();
-                    values.put(ApiEncryptOnReceiptKey.PACKAGE_NAME, packageName);
-                    values.put(ApiEncryptOnReceiptKey.IDENTIFIER, identifier);
+                case ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID: {
+                    Timber.d("update case ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID");
 
-                    int updated = db.update(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, values,
-                            ApiEncryptOnReceiptKey.PACKAGE_NAME + "=? AND " + ApiEncryptOnReceiptKey.IDENTIFIER + "=?",
-                            new String[] { packageName, identifier });
+                    int updated = db.update(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, values, null, null);
                     if (updated == 0) {
                         db.insertOrThrow(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, null, values);
                     }

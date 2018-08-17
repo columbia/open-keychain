@@ -672,7 +672,7 @@ public class PgpSignEncryptOperation extends BaseOperation<PgpSignEncryptInputPa
             }
         } catch (KeyWritableRepository.NotFoundException e) {
             log.add(LogType.MSG_PSE_KEY_UNKNOWN, indent + 1,
-                    KeyFormattingUtils.convertKeyIdToHex(encryptMasterKeyId));
+                    KeyFormattingUtils.convertKeyIdToHex(encryptMasterKeyId) + " " + encryptMasterKeyId);
             return false;
         }
         return true;

@@ -114,9 +114,6 @@ public class KeychainContract {
     }
 
     interface ApiEncryptOnReceiptKeyColumns {
-        String PACKAGE_NAME = "package_name";
-        String IDENTIFIER = "identifier";
-
         String MASTER_KEY_ID = "master_key_id";
     }
 
@@ -414,14 +411,8 @@ public class KeychainContract {
     }
 
     public static class ApiEncryptOnReceiptKey implements ApiEncryptOnReceiptKeyColumns, BaseColumns {
-        public static final String PACKAGE_NAME = "package_name";
-        public static final String IDENTIFIER = "identifier";
-
         public static final Uri CONTENT_URI = BASE_CONTENT_URI_INTERNAL.buildUpon()
                 .appendPath(BASE_ENCRYPT_ON_RECEIPT_KEYS).build();
-        public static final String KEY_IS_REVOKED = "key_is_revoked";
-        public static final String KEY_IS_EXPIRED = "key_is_expired";
-        public static final String KEY_IS_VERIFIED = "key_is_verified";
 
         public static Uri buildByKeyUri(Uri uri) {
             return CONTENT_URI.buildUpon().appendPath(PATH_BY_KEY_ID).appendPath(uri.getPathSegments().get(1)).build();

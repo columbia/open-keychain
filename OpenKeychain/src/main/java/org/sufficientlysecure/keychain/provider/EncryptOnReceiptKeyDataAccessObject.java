@@ -8,6 +8,9 @@ import android.net.Uri;
 
 import org.sufficientlysecure.keychain.provider.KeychainContract.ApiEncryptOnReceiptKey;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import timber.log.Timber;
 
 /**
@@ -19,6 +22,7 @@ public class EncryptOnReceiptKeyDataAccessObject {
     private final SimpleContentResolverInterface queryInterface;
     private final String packageName;
 
+    private static final String[] PROJECTION_MASTER_KEY_ID = { ApiEncryptOnReceiptKey.MASTER_KEY_ID };
 
     public EncryptOnReceiptKeyDataAccessObject(Context context, String packageName) {
         this.packageName = packageName;
@@ -52,10 +56,30 @@ public class EncryptOnReceiptKeyDataAccessObject {
         ContentValues cv = new ContentValues();
         cv.put(ApiEncryptOnReceiptKey.MASTER_KEY_ID, newMasterKeyId);
 
-        Uri uri = ApiEncryptOnReceiptKey.buildByPackageNameAndKeyId(packageName, Long.toString(keyId));
+        Uri uri = ApiEncryptOnReceiptKey.buildByMasterKeyId(newMasterKeyId);
 
         Timber.d("updateKey generated uri=%s", uri.getPath());
 
         queryInterface.update(uri, cv, null, null);
+    }
+
+    public Set<Long> getMasterKeyIds() {
+        final Set<Long> keyIds = new HashSet<>();
+        Uri uri = ApiEncryptOnReceiptKey.buildByPackageName(packageName);
+        Cursor cursor = queryInterface.query(uri, PROJECTION_MASTER_KEY_ID, null, null, null);
+
+        Timber.d("Got cursor (count=%s) for uri: %s", cursor.getCount(), uri.getPath());
+
+        try {
+            while (cursor.moveToNext()) {
+                Long masterKeyId = cursor.getLong(0);
+                keyIds.add(masterKeyId);
+                Timber.d("EORKeyDataAccessObject got master key ID %s", masterKeyId);
+            }
+        } finally {
+            cursor.close();
+        }
+
+        return keyIds;
     }
 }

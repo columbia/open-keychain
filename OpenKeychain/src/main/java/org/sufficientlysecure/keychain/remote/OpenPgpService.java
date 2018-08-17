@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.app.PendingIntent;
 import android.app.Service;
@@ -237,6 +238,34 @@ public class OpenPgpService extends Service {
                 pgpData.setSignatureMasterKeyId(signKeyId)
                         .setSignatureSubKeyId(signSubKeyId)
                         .setAdditionalEncryptId(signKeyId);
+            }
+
+            boolean encryptOnReceiptRequest = data.getBooleanExtra(OpenPgpApi.EXTRA_REQUEST_ENCRYPT_ON_RECEIPT, false);
+
+            if (encryptOnReceiptRequest) {
+                Timber.d("Got encrypt on receipt request");
+                EncryptOnReceiptKeyDataAccessObject e3KeyDao = new EncryptOnReceiptKeyDataAccessObject(getBaseContext(),
+                        mApiPermissionHelper.getCurrentCallingPackage());
+
+                // Add any existing key ids with encrypt-on-receipt key IDs
+                Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds();
+
+                if (data.hasExtra(OpenPgpApi.EXTRA_KEY_IDS)) {
+                    long[] extraKeyIds = data.getLongArrayExtra(OpenPgpApi.EXTRA_KEY_IDS);
+
+                    for (long extraKeyId : extraKeyIds) {
+                        setKeyIds.add(extraKeyId);
+                    }
+                }
+
+                long[] combinedKeyIds = new long[setKeyIds.size()];
+                int i = 0;
+                for (long keyId : setKeyIds) {
+                    combinedKeyIds[i++] = keyId;
+                    Timber.d("Adding master key ID to combined list: " + keyId);
+                }
+
+                data.putExtra(OpenPgpApi.EXTRA_KEY_IDS, combinedKeyIds);
             }
 
             KeyIdResult keyIdResult = mKeyIdExtractor.returnKeyIdsFromIntent(data, false,

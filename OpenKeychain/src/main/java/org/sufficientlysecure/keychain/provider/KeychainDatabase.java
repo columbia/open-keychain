@@ -71,7 +71,7 @@ public class KeychainDatabase extends SQLiteOpenHelper {
         String API_ALLOWED_KEYS = "api_allowed_keys";
         String OVERRIDDEN_WARNINGS = "overridden_warnings";
         String API_AUTOCRYPT_PEERS = "api_autocrypt_peers";
-        String API_ENCRYPT_ON_RECEIPT_KEYS = "api_autocrypt_peers";
+        String API_ENCRYPT_ON_RECEIPT_KEYS = "api_encrypt_on_receipt_keys";
     }
 
     private static final String CREATE_KEYRINGS_PUBLIC =
@@ -191,13 +191,8 @@ public class KeychainDatabase extends SQLiteOpenHelper {
 
     private static final String CREATE_API_ENCRYPT_ON_RECEIPT_KEYS =
             "CREATE TABLE IF NOT EXISTS " + Tables.API_ENCRYPT_ON_RECEIPT_KEYS + " ("
-                    + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + " TEXT NOT NULL, "
-                    + ApiEncryptOnReceiptKeyColumns.IDENTIFIER + " TEXT NOT NULL, "
                     + ApiEncryptOnReceiptKeyColumns.MASTER_KEY_ID + " INTEGER NULL, "
-                    + "PRIMARY KEY(" + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + ", "
-                    + ApiEncryptOnReceiptKeyColumns.IDENTIFIER + "), "
-                    + "FOREIGN KEY(" + ApiEncryptOnReceiptKeyColumns.PACKAGE_NAME + ") REFERENCES "
-                    + Tables.API_APPS + "(" + ApiAppsColumns.PACKAGE_NAME + ") ON DELETE CASCADE"
+                    + "PRIMARY KEY(" + ApiEncryptOnReceiptKeyColumns.MASTER_KEY_ID + ")"
                     + ")";
 
     private static final String CREATE_API_APPS =
