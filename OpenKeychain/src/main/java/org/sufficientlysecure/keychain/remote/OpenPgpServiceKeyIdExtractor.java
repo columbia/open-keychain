@@ -94,6 +94,7 @@ class OpenPgpServiceKeyIdExtractor {
             HashSet<Long> explicitKeyIds = new HashSet<>();
             for (long keyId : data.getLongArrayExtra(OpenPgpApi.EXTRA_KEY_IDS)) {
                 explicitKeyIds.add(keyId);
+                Timber.d("Added key ID from non-ambiguous key ID extra: " + keyId);
             }
             result = result.withExplicitKeyIds(explicitKeyIds);
         }
