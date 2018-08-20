@@ -19,8 +19,10 @@ package org.sufficientlysecure.keychain.remote;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import android.app.PendingIntent;
 import android.content.ContentResolver;
@@ -110,9 +112,10 @@ class OpenPgpServiceKeyIdExtractor {
         ArrayList<String> missingEmails = new ArrayList<>();
         ArrayList<String> duplicateEmails = new ArrayList<>();
         int combinedAutocryptState = AutocryptStatus.AUTOCRYPT_PEER_DISABLED;
+        boolean encryptOnReceiptRequest = data.getBooleanExtra(OpenPgpApi.EXTRA_REQUEST_ENCRYPT_ON_RECEIPT, false);
 
         if (hasAddresses) {
-            HashMap<String, AddressQueryResult> userIdEntries = getStatusMapForQueriedAddresses(
+            HashMap<String, AddressQueryResult> userIdEntries = getStatusMapForQueriedAddresses(data,
                     encryptionAddresses, callingPackageName);
 
             boolean anyKeyNotVerified = false;
@@ -131,6 +134,17 @@ class OpenPgpServiceKeyIdExtractor {
 
                     combinedAutocryptState = combineAutocryptState(
                             combinedAutocryptState, addressQueryResult.autocryptState);
+
+                    continue;
+                }
+
+                if (encryptOnReceiptRequest && addressQueryResult.uidMasterKeyId != null) {
+                    keyIds.add(addressQueryResult.uidMasterKeyId);
+                    keyIds.addAll(addressQueryResult.eorMasterKeyIds);
+
+                    if (addressQueryResult.uidKeyStatus != KeychainExternalContract.KEY_STATUS_VERIFIED) {
+                        anyKeyNotVerified = true;
+                    }
 
                     continue;
                 }
@@ -185,8 +199,9 @@ class OpenPgpServiceKeyIdExtractor {
      * verification status exist, the first one is returned and marked as having a duplicate.
      */
     @NonNull
-    private HashMap<String, AddressQueryResult> getStatusMapForQueriedAddresses(String[] encryptionUserIds, String callingPackageName) {
-        HashMap<String,AddressQueryResult> keyRows = new HashMap<>();
+    private HashMap<String, AddressQueryResult> getStatusMapForQueriedAddresses(Intent data, String[] encryptionUserIds, String callingPackageName) {
+        boolean encryptOnReceiptRequest = data.getBooleanExtra(OpenPgpApi.EXTRA_REQUEST_ENCRYPT_ON_RECEIPT, false);
+        HashMap<String, AddressQueryResult> keyRows = new HashMap<>();
         Uri queryUri = AutocryptStatus.CONTENT_URI.buildUpon().appendPath(callingPackageName).build();
         Cursor cursor = contentResolver.query(queryUri, PROJECTION_MAIL_STATUS, null, encryptionUserIds, null);
         if (cursor == null) {
@@ -205,10 +220,21 @@ class OpenPgpServiceKeyIdExtractor {
                         cursor.isNull(INDEX_AUTOCRYPT_MASTER_KEY_ID) ? null : cursor.getLong(INDEX_AUTOCRYPT_MASTER_KEY_ID);
                 int autocryptKeyStatus = cursor.getInt(INDEX_AUTOCRYPT_KEY_STATUS);
                 int autocryptPeerStatus = cursor.getInt(INDEX_AUTOCRYPT_PEER_STATE);
+                Set<Long> eorMasterKeyIds = new HashSet<>();
+
+                if (encryptOnReceiptRequest) {
+                    long[] eorMasterKeyIdsArr = data.getLongArrayExtra(OpenPgpApi.EXTRA_EOR_KEY_IDS);
+
+                    for (long eorMasterKeyId : eorMasterKeyIdsArr) {
+                        eorMasterKeyIds.add(eorMasterKeyId);
+                    }
+                } else {
+                    eorMasterKeyIds = Collections.emptySet();
+                }
 
                 AddressQueryResult status = new AddressQueryResult(
                                 uidMasterKeyId, uidKeyStatus, uidHasMultipleCandidates, autocryptMasterKeyId,
-                                autocryptKeyStatus, autocryptPeerStatus);
+                                autocryptKeyStatus, autocryptPeerStatus, eorMasterKeyIds);
 
                 keyRows.put(queryAddress, status);
             }
@@ -225,15 +251,17 @@ class OpenPgpServiceKeyIdExtractor {
         private final Long autocryptMasterKeyId;
         private final int autocryptKeyStatus;
         private final int autocryptState;
+        private final Set<Long> eorMasterKeyIds;
 
         AddressQueryResult(Long uidMasterKeyId, int uidKeyStatus, boolean uidHasMultipleCandidates, Long autocryptMasterKeyId,
-                int autocryptKeyStatus, int autocryptState) {
+                int autocryptKeyStatus, int autocryptState, Set<Long> eorMasterKeyIds) {
             this.uidMasterKeyId = uidMasterKeyId;
             this.uidKeyStatus = uidKeyStatus;
             this.uidHasMultipleCandidates = uidHasMultipleCandidates;
             this.autocryptMasterKeyId = autocryptMasterKeyId;
             this.autocryptKeyStatus = autocryptKeyStatus;
             this.autocryptState = autocryptState;
+            this.eorMasterKeyIds = eorMasterKeyIds;
         }
     }
 

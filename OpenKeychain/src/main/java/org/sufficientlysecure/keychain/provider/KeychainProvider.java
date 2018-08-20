@@ -845,8 +845,8 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
 
                 qb.setProjectionMap(projectionMap);
                 qb.setTables(Tables.API_ENCRYPT_ON_RECEIPT_KEYS +
-                        " LEFT JOIN " + Tables.KEYS + " AS ac_key" +
-                        " ON (ac_key." + Keys.MASTER_KEY_ID + " = " + Tables.API_ENCRYPT_ON_RECEIPT_KEYS + "." + ApiEncryptOnReceiptKey.MASTER_KEY_ID +
+                        " LEFT JOIN " + Tables.KEYS + " AS eor_key" +
+                        " ON (eor_key." + Keys.MASTER_KEY_ID + " = " + Tables.API_ENCRYPT_ON_RECEIPT_KEYS + "." + ApiEncryptOnReceiptKey.MASTER_KEY_ID +
                         ")"
                 );
 
@@ -1181,7 +1181,7 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
                     break;
                 }
                 case ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID: {
-                    Timber.d("update case ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID");
+                    Timber.d("update() ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID Tables.API_ENCRYPT_ON_RECEIPT_KEYS");
 
                     int updated = db.update(Tables.API_ENCRYPT_ON_RECEIPT_KEYS, values, null, null);
                     if (updated == 0) {
@@ -1191,6 +1191,14 @@ public class KeychainProvider extends ContentProvider implements SimpleContentRe
                     Long masterKeyId = values.getAsLong(ApiEncryptOnReceiptKey.MASTER_KEY_ID);
                     if (masterKeyId != null) {
                         contentResolver.notifyChange(KeyRings.buildGenericKeyRingUri(masterKeyId), null);
+
+                        // Also add to Tables.KEYS because I think that's how it needs to be?
+                        String actualSelection = Keys.MASTER_KEY_ID + " = " + Long.toString(masterKeyId);
+                        if (!TextUtils.isEmpty(selection)) {
+                            actualSelection += " AND (" + selection + ")";
+                        }
+                        count = db.update(Tables.KEYS, values, actualSelection, selectionArgs);
+                        Timber.d("update() ENCRYPT_ON_RECEIPT_BY_MASTER_KEY_ID Tables.KEYS");
                     }
 
                     break;

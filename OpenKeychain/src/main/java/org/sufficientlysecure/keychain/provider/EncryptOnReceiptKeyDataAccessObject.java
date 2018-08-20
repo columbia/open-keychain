@@ -25,9 +25,12 @@ public class EncryptOnReceiptKeyDataAccessObject {
     private static final String[] PROJECTION_MASTER_KEY_ID = { ApiEncryptOnReceiptKey.MASTER_KEY_ID };
 
     public EncryptOnReceiptKeyDataAccessObject(Context context, String packageName) {
+        this(context.getContentResolver(), packageName);
+    }
+
+    public EncryptOnReceiptKeyDataAccessObject(ContentResolver contentResolver, String packageName) {
         this.packageName = packageName;
 
-        final ContentResolver contentResolver = context.getContentResolver();
         queryInterface = new SimpleContentResolverInterface() {
             @Override
             public Cursor query(Uri contentUri, String[] projection, String selection, String[] selectionArgs,
