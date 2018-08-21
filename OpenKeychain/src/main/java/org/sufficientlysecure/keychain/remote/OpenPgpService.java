@@ -44,6 +44,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.util.encoders.Hex;
 import org.openintents.openpgp.AutocryptPeerUpdate;
 import org.openintents.openpgp.IOpenPgpService;
 import org.openintents.openpgp.OpenPgpDecryptionResult;
@@ -82,6 +83,7 @@ import org.sufficientlysecure.keychain.remote.OpenPgpServiceKeyIdExtractor.KeyId
 import org.sufficientlysecure.keychain.service.BackupKeyringParcel;
 import org.sufficientlysecure.keychain.service.input.CryptoInputParcel;
 import org.sufficientlysecure.keychain.service.input.RequiredInputParcel;
+import org.sufficientlysecure.keychain.ui.util.KeyFormattingUtils;
 import org.sufficientlysecure.keychain.util.InputData;
 import org.sufficientlysecure.keychain.util.Numeric9x4PassphraseUtil;
 import org.sufficientlysecure.keychain.util.Passphrase;
@@ -691,6 +693,11 @@ public class OpenPgpService extends Service {
                             Timber.e(e, "IOException when closing OutputStream");
                         }
                     }
+                }
+
+                boolean requestedFingerprint = data.getBooleanExtra(OpenPgpApi.EXTRA_REQUEST_FINGERPRINT, false);
+                if (requestedFingerprint) {
+                    result.putExtra(OpenPgpApi.RESULT_FINGERPRINT, KeyFormattingUtils.convertFingerprintToHex(keyRing.getFingerprint()));
                 }
 
                 // also return PendingIntent that opens the key view activity
