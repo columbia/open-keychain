@@ -32,6 +32,8 @@ import java.util.Set;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -84,6 +86,7 @@ import org.sufficientlysecure.keychain.service.BackupKeyringParcel;
 import org.sufficientlysecure.keychain.service.input.CryptoInputParcel;
 import org.sufficientlysecure.keychain.service.input.RequiredInputParcel;
 import org.sufficientlysecure.keychain.ui.util.KeyFormattingUtils;
+import org.sufficientlysecure.keychain.ui.util.QrCodeUtils;
 import org.sufficientlysecure.keychain.util.InputData;
 import org.sufficientlysecure.keychain.util.Numeric9x4PassphraseUtil;
 import org.sufficientlysecure.keychain.util.Passphrase;
@@ -697,7 +700,14 @@ public class OpenPgpService extends Service {
 
                 boolean requestedFingerprint = data.getBooleanExtra(OpenPgpApi.EXTRA_REQUEST_FINGERPRINT, false);
                 if (requestedFingerprint) {
-                    result.putExtra(OpenPgpApi.RESULT_FINGERPRINT, KeyFormattingUtils.convertFingerprintToHex(keyRing.getFingerprint()));
+                    String keyFingerprint = KeyFormattingUtils.convertFingerprintToHex(keyRing.getFingerprint());
+                    Uri qrFingerprintUri = new Uri.Builder().scheme(Constants.FINGERPRINT_SCHEME)
+                            .opaquePart(keyFingerprint)
+                            .build();
+                    Bitmap qrFingerprint = QrCodeUtils.getQRCodeBitmap(qrFingerprintUri, 500);
+
+                    result.putExtra(OpenPgpApi.RESULT_FINGERPRINT, keyFingerprint);
+                    result.putExtra(OpenPgpApi.RESULT_FINGERPRINT_QR, qrFingerprint);
                 }
 
                 // also return PendingIntent that opens the key view activity
