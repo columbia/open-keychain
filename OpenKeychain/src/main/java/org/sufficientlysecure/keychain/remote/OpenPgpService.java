@@ -433,6 +433,7 @@ public class OpenPgpService extends Service {
 
             byte[] detachedSignature = data.getByteArrayExtra(OpenPgpApi.EXTRA_DETACHED_SIGNATURE);
             String senderAddress = data.getStringExtra(OpenPgpApi.EXTRA_SENDER_ADDRESS);
+            String encryptOnReceiptAddress = data.getStringExtra(OpenPgpApi.EXTRA_ENCRYPT_ON_RECEIPT_ADDRESS);
 
             updateAutocryptPeerImpl(data);
 
@@ -449,6 +450,7 @@ public class OpenPgpService extends Service {
                     .setDecryptMetadataOnly(decryptMetadataOnly)
                     .setDetachedSignature(detachedSignature)
                     .setSenderAddress(senderAddress)
+                    .setEncryptOnReceiptAddress(encryptOnReceiptAddress)
                     .build();
 
             DecryptVerifyResult pgpResult = op.execute(input, cryptoInput, inputData, outputStream);

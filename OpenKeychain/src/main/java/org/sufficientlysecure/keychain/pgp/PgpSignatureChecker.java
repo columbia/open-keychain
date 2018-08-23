@@ -60,12 +60,13 @@ class PgpSignatureChecker {
 
     private KeyRepository mKeyRepository;
 
-    PgpSignatureChecker(KeyRepository keyRepository, String senderAddress,
+    PgpSignatureChecker(KeyRepository keyRepository, String senderAddress, String encryptOnReceiptAddress,
             DecryptVerifySecurityProblemBuilder securityProblemBuilder) {
         mKeyRepository = keyRepository;
 
         signatureResultBuilder = new OpenPgpSignatureResultBuilder(keyRepository);
         signatureResultBuilder.setSenderAddress(senderAddress);
+        signatureResultBuilder.setEncryptOnReceiptAddress(encryptOnReceiptAddress);
 
         this.securityProblemBuilder = securityProblemBuilder;
     }

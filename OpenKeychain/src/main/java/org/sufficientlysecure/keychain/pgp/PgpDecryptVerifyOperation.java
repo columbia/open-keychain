@@ -394,7 +394,7 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
         }
 
         PgpSignatureChecker signatureChecker = new PgpSignatureChecker(
-                mKeyRepository, input.getSenderAddress(), securityProblemBuilder);
+                mKeyRepository, input.getSenderAddress(), input.getEncryptOnReceiptAddress(), securityProblemBuilder);
         if (signatureChecker.initializeOnePassSignature(dataChunk, log, indent +1)) {
             dataChunk = plainFact.nextObject();
         }
@@ -924,6 +924,7 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
 
         DecryptVerifySecurityProblemBuilder securityProblemBuilder = new DecryptVerifySecurityProblemBuilder();
         PgpSignatureChecker signatureChecker = new PgpSignatureChecker(mKeyRepository, input.getSenderAddress(),
+                input.getEncryptOnReceiptAddress(),
                 securityProblemBuilder);
 
         Object o = pgpFact.nextObject();
@@ -982,6 +983,7 @@ public class PgpDecryptVerifyOperation extends BaseOperation<PgpDecryptVerifyInp
 
         DecryptVerifySecurityProblemBuilder securityProblemBuilder = new DecryptVerifySecurityProblemBuilder();
         PgpSignatureChecker signatureChecker = new PgpSignatureChecker(mKeyRepository, input.getSenderAddress(),
+                input.getEncryptOnReceiptAddress(),
                 securityProblemBuilder);
 
         if ( ! signatureChecker.initializeSignature(o, log, indent+1)) {
