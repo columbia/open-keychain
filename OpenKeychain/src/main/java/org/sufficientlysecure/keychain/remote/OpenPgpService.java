@@ -709,6 +709,8 @@ public class OpenPgpService extends Service {
                     result.putExtra(OpenPgpApi.RESULT_FINGERPRINT_QR, qrFingerprint);
                 }
 
+                result.putExtra(OpenPgpApi.RESULT_USER_ID, keyRing.getPrimaryUserIdWithFallback());
+
                 // also return PendingIntent that opens the key view activity
                 result.putExtra(OpenPgpApi.RESULT_INTENT,
                         mApiPendingIntentFactory.createShowKeyPendingIntent(data, masterKeyId));
