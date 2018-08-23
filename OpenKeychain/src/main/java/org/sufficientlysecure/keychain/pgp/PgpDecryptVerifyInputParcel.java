@@ -50,6 +50,8 @@ public abstract class PgpDecryptVerifyInputParcel implements Parcelable {
     abstract byte[] getDetachedSignature();
     @Nullable
     abstract String getSenderAddress();
+    @Nullable
+    abstract String getEncryptOnReceiptAddress();
 
     public abstract Builder toBuilder();
 
@@ -71,6 +73,7 @@ public abstract class PgpDecryptVerifyInputParcel implements Parcelable {
         public abstract Builder setDetachedSignature(byte[] detachedSignature);
         public abstract Builder setSenderAddress(String senderAddress);
         public abstract Builder setAutocryptSetup(boolean isAutocryptSetup);
+        public abstract Builder setEncryptOnReceiptAddress(String encryptOnReceiptAddress);
 
         public abstract Builder setAllowedKeyIds(List<Long> allowedKeyIds);
         abstract List<Long> getAllowedKeyIds();

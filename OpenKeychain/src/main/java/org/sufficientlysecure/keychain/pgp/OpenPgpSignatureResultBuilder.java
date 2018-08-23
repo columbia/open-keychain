@@ -55,6 +55,7 @@ public class OpenPgpSignatureResultBuilder {
     private boolean mIsKeyExpired = false;
     private boolean mInsecure = false;
     private String mSenderAddress;
+    private String encryptOnReceiptAddress;
     private Date mSignatureTimestamp;
 
     public OpenPgpSignatureResultBuilder(KeyRepository keyRepository) {
@@ -151,6 +152,8 @@ public class OpenPgpSignatureResultBuilder {
             return SenderStatusResult.USER_ID_CONFIRMED;
         } else if (userIdListContainsAddress(mSenderAddress, allUserIds)) {
             return SenderStatusResult.USER_ID_UNCONFIRMED;
+        } else if (userIdListContainsAddress(encryptOnReceiptAddress, confirmedUserIds)) {
+            return SenderStatusResult.USER_ID_CONFIRMED_EOR;
         } else {
             return SenderStatusResult.USER_ID_MISSING;
         }
@@ -208,4 +211,7 @@ public class OpenPgpSignatureResultBuilder {
         mSenderAddress = senderAddress;
     }
 
+    public void setEncryptOnReceiptAddress(String encryptOnReceiptAddress) {
+        this.encryptOnReceiptAddress = encryptOnReceiptAddress;
+    }
 }
