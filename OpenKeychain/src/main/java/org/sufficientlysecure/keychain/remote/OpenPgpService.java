@@ -46,7 +46,6 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.util.encoders.Hex;
 import org.openintents.openpgp.AutocryptPeerUpdate;
 import org.openintents.openpgp.IOpenPgpService;
 import org.openintents.openpgp.OpenPgpDecryptionResult;
@@ -77,7 +76,7 @@ import org.sufficientlysecure.keychain.daos.ApiAppDao;
 import org.sufficientlysecure.keychain.daos.AutocryptPeerDao;
 import org.sufficientlysecure.keychain.daos.KeyRepository;
 import org.sufficientlysecure.keychain.daos.KeyRepository.NotFoundException;
-import org.sufficientlysecure.keychain.provider.EncryptOnReceiptKeyDataAccessObject;
+import org.sufficientlysecure.keychain.daos.EncryptOnReceiptKeyDao;
 import org.sufficientlysecure.keychain.provider.KeychainExternalContract.AutocryptStatus;
 import org.sufficientlysecure.keychain.daos.OverriddenWarningsDao;
 import org.sufficientlysecure.keychain.remote.OpenPgpServiceKeyIdExtractor.KeyIdResult;
@@ -252,8 +251,7 @@ public class OpenPgpService extends Service {
 
             if (encryptOnReceiptRequest) {
                 Timber.d("Got encrypt on receipt request");
-                EncryptOnReceiptKeyDataAccessObject e3KeyDao = new EncryptOnReceiptKeyDataAccessObject(getBaseContext(),
-                        mApiPermissionHelper.getCurrentCallingPackage());
+                EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
 
                 // Add any existing key ids with encrypt-on-receipt key IDs
                 Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds();
@@ -950,16 +948,16 @@ public class OpenPgpService extends Service {
 
     private Intent addEncryptOnReceiptKey(Intent data) {
         try {
-            EncryptOnReceiptKeyDataAccessObject e3KeyDao = new EncryptOnReceiptKeyDataAccessObject(getBaseContext(),
-                    mApiPermissionHelper.getCurrentCallingPackage());
+            EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
             EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
             // TODO: Assert that these values exist
             long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
             byte[] keyToAdd = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+            String packageName = mApiPermissionHelper.getCurrentCallingPackage();
 
             Timber.d("addEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToAdd);
 
-            eorInteractor.updateEncryptOnReceiptKey(keyId, keyToAdd);
+            eorInteractor.updateEncryptOnReceiptKey(packageName, keyToAdd);
 
             Intent result = new Intent();
             result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);

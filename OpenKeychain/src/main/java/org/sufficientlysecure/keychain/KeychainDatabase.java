@@ -115,6 +115,7 @@ public class KeychainDatabase {
         db.execSQL(ApiAppsModel.CREATE_TABLE);
         db.execSQL(OverriddenWarningsModel.CREATE_TABLE);
         db.execSQL(AutocryptPeersModel.CREATE_TABLE);
+        db.execSQL(EncryptOnReceiptKeysModel.CREATE_TABLE);
         db.execSQL(ApiAllowedKeysModel.CREATE_TABLE);
         db.execSQL(KeysModel.UNIFIEDKEYVIEW);
         db.execSQL(KeysModel.VALIDKEYSVIEW);

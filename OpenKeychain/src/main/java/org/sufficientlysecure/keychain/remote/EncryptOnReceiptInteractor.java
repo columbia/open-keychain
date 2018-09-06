@@ -4,13 +4,14 @@ import android.content.Context;
 import android.support.annotation.Nullable;
 
 import org.sufficientlysecure.keychain.Constants;
+import org.sufficientlysecure.keychain.daos.KeyWritableRepository;
 import org.sufficientlysecure.keychain.operations.results.SaveKeyringResult;
 import org.sufficientlysecure.keychain.pgp.UncachedKeyRing;
 import org.sufficientlysecure.keychain.pgp.exception.PgpGeneralException;
-import org.sufficientlysecure.keychain.provider.EncryptOnReceiptKeyDataAccessObject;
-import org.sufficientlysecure.keychain.provider.KeyWritableRepository;
+import org.sufficientlysecure.keychain.daos.EncryptOnReceiptKeyDao;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import timber.log.Timber;
 
@@ -21,22 +22,22 @@ import timber.log.Timber;
  */
 public class EncryptOnReceiptInteractor {
 
-    private EncryptOnReceiptKeyDataAccessObject e3KeyDataDao;
+    private EncryptOnReceiptKeyDao e3KeyDataDao;
     private KeyWritableRepository keyWritableRepository;
 
-    public static EncryptOnReceiptInteractor getInstance(Context context, EncryptOnReceiptKeyDataAccessObject e3KeyDataDao) {
+    public static EncryptOnReceiptInteractor getInstance(Context context, EncryptOnReceiptKeyDao e3KeyDataDao) {
         KeyWritableRepository keyWritableRepository = KeyWritableRepository.create(context);
 
         return new EncryptOnReceiptInteractor(e3KeyDataDao, keyWritableRepository);
     }
 
-    private EncryptOnReceiptInteractor(EncryptOnReceiptKeyDataAccessObject e3KeyDataDao,
+    private EncryptOnReceiptInteractor(EncryptOnReceiptKeyDao e3KeyDataDao,
                                 KeyWritableRepository keyWritableRepository) {
         this.e3KeyDataDao = e3KeyDataDao;
         this.keyWritableRepository = keyWritableRepository;
     }
 
-    public void updateEncryptOnReceiptKey(long keyId, byte[] keyData) {
+    public void updateEncryptOnReceiptKey(String packageName, byte[] keyData) {
         SaveKeyringResult saveKeyringResult = parseAndImportKeyData(keyData);
         if (saveKeyringResult == null) {
             return;
@@ -45,7 +46,7 @@ public class EncryptOnReceiptInteractor {
         Timber.d("updateEncryptOnReceiptKey saveKeyringResult.savedMasterKeyId=%s", saveKeyringResult.savedMasterKeyId);
 
         Long newMasterKeyId = saveKeyringResult.savedMasterKeyId;
-        e3KeyDataDao.updateKey(keyId, newMasterKeyId);
+        e3KeyDataDao.updateKey(packageName, UUID.randomUUID().toString(), newMasterKeyId);
     }
 
     @Nullable

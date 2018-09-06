@@ -43,6 +43,11 @@ public class DatabaseNotifyManager {
         contentResolver.notifyChange(uri, null);
     }
 
+    public void notifyEncryptOnReceiptUpdate(long masterKeyId) {
+        Uri uri = getNotifyUriMasterKeyId(masterKeyId);
+        contentResolver.notifyChange(uri, null);
+    }
+
     public void notifyKeyMetadataChange(long masterKeyId) {
         Uri uri = getNotifyUriMasterKeyId(masterKeyId);
         contentResolver.notifyChange(uri, null);
