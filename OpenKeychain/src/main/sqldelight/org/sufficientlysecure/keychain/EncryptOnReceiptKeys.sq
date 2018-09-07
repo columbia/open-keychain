@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS eor_keys (
     package_name TEXT NOT NULL,
     identifier TEXT NOT NULL,
     master_key_id INTEGER NULL,
+    verified INTEGER AS Boolean NOT NULL,
     PRIMARY KEY(package_name, identifier),
     FOREIGN KEY(package_name) REFERENCES api_apps (package_name) ON DELETE CASCADE
 );
@@ -19,6 +20,11 @@ deleteByMasterKeyId:
 DELETE FROM eor_keys
     WHERE master_key_id = ?;
 
+getMasterKeyIdsVerified:
+SELECT master_key_id
+    FROM  eor_keys
+    WHERE verified = 1;
+
 getMasterKeyIds:
 SELECT master_key_id
     FROM  eor_keys;
@@ -27,4 +33,9 @@ updateKey:
 UPDATE eor_keys SET master_key_id = ?4 WHERE package_name = ?1 AND identifier = ?2;
 
 insertKey:
-INSERT OR IGNORE INTO eor_keys (package_name, identifier) VALUES (?, ?);
+INSERT OR IGNORE INTO eor_keys (package_name, identifier, verified) VALUES (?, ?, ?);
+
+updateKeyWithVerification:
+UPDATE eor_keys
+    SET verified = 1
+    WHERE master_key_id = ?;

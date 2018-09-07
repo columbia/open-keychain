@@ -254,7 +254,7 @@ public class OpenPgpService extends Service {
                 EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
 
                 // Add any existing key ids with encrypt-on-receipt key IDs
-                Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds();
+                Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds(true);
                 long[] eorKeyIds = new long[setKeyIds.size()];
                 int i = 0;
                 for (long keyId : setKeyIds) {

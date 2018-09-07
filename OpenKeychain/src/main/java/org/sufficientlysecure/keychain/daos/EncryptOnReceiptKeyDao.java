@@ -44,9 +44,15 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
         getDatabaseNotifyManager().notifyEncryptOnReceiptUpdate(masterKeyId);
     }
 
-    public Set<Long> getMasterKeyIds() {
+    public Set<Long> getMasterKeyIds(boolean verifiedOnly) {
         final Set<Long> keyIds = new HashSet<>();
-        SqlDelightQuery query = EncryptOnReceiptKey.FACTORY.getMasterKeyIds();
+        SqlDelightQuery query;
+
+        if (verifiedOnly) {
+            query = EncryptOnReceiptKey.FACTORY.getMasterKeyIdsVerified();
+        } else {
+            query = EncryptOnReceiptKey.FACTORY.getMasterKeyIds();
+        }
 
         try (Cursor cursor = getReadableDb().query(query)) {
             Timber.d("Got cursor (count=%s)", cursor.getCount());
@@ -63,7 +69,7 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
 
     private void ensureEorKeyExists(String packageName, String identifier) {
         InsertKey insertStatement = new InsertKey(getWritableDb());
-        insertStatement.bind(packageName, identifier);
+        insertStatement.bind(packageName, identifier, false);
         insertStatement.executeInsert();
     }
 }
