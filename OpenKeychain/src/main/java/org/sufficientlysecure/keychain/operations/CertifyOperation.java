@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import org.sufficientlysecure.keychain.daos.EncryptOnReceiptKeyDao;
 import org.sufficientlysecure.keychain.daos.KeyMetadataDao;
 import org.sufficientlysecure.keychain.daos.KeyRepository.NotFoundException;
 import org.sufficientlysecure.keychain.daos.KeyWritableRepository;
@@ -62,12 +63,14 @@ import org.sufficientlysecure.keychain.util.Passphrase;
  */
 public class CertifyOperation extends BaseReadWriteOperation<CertifyActionsParcel> {
     private final KeyMetadataDao keyMetadataDao;
+    private final EncryptOnReceiptKeyDao eorDao;
 
     public CertifyOperation(Context context, KeyWritableRepository keyWritableRepository, Progressable progressable,
             AtomicBoolean cancelled) {
         super(context, keyWritableRepository, progressable, cancelled);
 
         this.keyMetadataDao = KeyMetadataDao.create(context);
+        this.eorDao = EncryptOnReceiptKeyDao.getInstance(context);
     }
 
     @NonNull
@@ -237,6 +240,10 @@ public class CertifyOperation extends BaseReadWriteOperation<CertifyActionsParce
                 } else {
                     uploadError += 1;
                 }
+            }
+
+            if (eorDao.masterKeyIdExists(certifiedKey.getMasterKeyId())) {
+                eorDao.verifyMatchingKeys(certifiedKey.getMasterKeyId());
             }
 
             if (result.success()) {

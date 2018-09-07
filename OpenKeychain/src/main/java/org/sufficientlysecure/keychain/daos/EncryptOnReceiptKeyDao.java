@@ -7,6 +7,7 @@ import com.squareup.sqldelight.SqlDelightQuery;
 
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.InsertKey;
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.UpdateKey;
+import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.UpdateKeyWithVerification;
 import org.sufficientlysecure.keychain.KeychainDatabase;
 import org.sufficientlysecure.keychain.model.EncryptOnReceiptKey;
 
@@ -65,6 +66,23 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
         }
 
         return keyIds;
+    }
+
+    public boolean masterKeyIdExists(long masterKeyId) {
+        SqlDelightQuery query = EncryptOnReceiptKey.FACTORY.selectByMasterKeyId(masterKeyId);
+
+        try (Cursor cursor = getReadableDb().query(query)) {
+            return cursor.getCount() > 0;
+        }
+    }
+
+    public void verifyMatchingKeys(long masterKeyId) {
+        UpdateKeyWithVerification updateStatement = new UpdateKeyWithVerification(getWritableDb());
+        updateStatement.bind(masterKeyId);
+        updateStatement.executeUpdateDelete();
+        Timber.d("verifyMatchingKeys masterKeyId=%s", masterKeyId);
+
+        getDatabaseNotifyManager().notifyEncryptOnReceiptUpdate(masterKeyId);
     }
 
     private void ensureEorKeyExists(String packageName, String identifier) {
