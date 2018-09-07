@@ -255,6 +255,12 @@ public class OpenPgpService extends Service {
 
                 // Add any existing key ids with encrypt-on-receipt key IDs
                 Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds();
+                long[] eorKeyIds = new long[setKeyIds.size()];
+                int i = 0;
+                for (long keyId : setKeyIds) {
+                    eorKeyIds[i++] = keyId;
+                }
+                data.putExtra(OpenPgpApi.EXTRA_EOR_KEY_IDS, eorKeyIds);
 
                 if (data.hasExtra(OpenPgpApi.EXTRA_KEY_IDS)) {
                     long[] extraKeyIds = data.getLongArrayExtra(OpenPgpApi.EXTRA_KEY_IDS);
@@ -265,10 +271,10 @@ public class OpenPgpService extends Service {
                 }
 
                 long[] combinedKeyIds = new long[setKeyIds.size()];
-                int i = 0;
+                i = 0;
                 for (long keyId : setKeyIds) {
                     combinedKeyIds[i++] = keyId;
-                    Timber.d("Adding master key ID to combined list: " + keyId);
+                    Timber.d("Adding master key ID to combined list: %s", keyId);
                 }
 
                 data.putExtra(OpenPgpApi.EXTRA_KEY_IDS, combinedKeyIds);

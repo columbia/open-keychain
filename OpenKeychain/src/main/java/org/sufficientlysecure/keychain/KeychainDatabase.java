@@ -48,7 +48,7 @@ import timber.log.Timber;
  */
 public class KeychainDatabase {
     private static final String DATABASE_NAME = "openkeychain.db";
-    private static final int DATABASE_VERSION = 32;
+    private static final int DATABASE_VERSION = 33;
     private final SupportSQLiteOpenHelper supportSQLiteOpenHelper;
 
     private static KeychainDatabase sInstance;
@@ -352,6 +352,9 @@ public class KeychainDatabase {
 
             case 31:
                 addSubkeyValidFromField(db);
+
+            case 32:
+                db.execSQL(EncryptOnReceiptKeysModel.CREATE_TABLE);
         }
     }
 
