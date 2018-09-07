@@ -5,6 +5,7 @@ import android.database.Cursor;
 
 import com.squareup.sqldelight.SqlDelightQuery;
 
+import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.InsertKey;
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.UpdateKey;
 import org.sufficientlysecure.keychain.KeychainDatabase;
 import org.sufficientlysecure.keychain.model.EncryptOnReceiptKey;
@@ -33,6 +34,8 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
     }
 
     public void updateKey(String packageName, String identifier, long masterKeyId) {
+        ensureEorKeyExists(packageName, identifier);
+
         UpdateKey updateStatement = new UpdateKey(getWritableDb());
         updateStatement.bind(packageName, identifier, masterKeyId);
         updateStatement.executeUpdateDelete();
@@ -56,5 +59,11 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
         }
 
         return keyIds;
+    }
+
+    private void ensureEorKeyExists(String packageName, String identifier) {
+        InsertKey insertStatement = new InsertKey(getWritableDb());
+        insertStatement.bind(packageName, identifier);
+        insertStatement.executeInsert();
     }
 }
