@@ -28,9 +28,11 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -54,17 +56,22 @@ import org.openintents.openpgp.OpenPgpMetadata;
 import org.openintents.openpgp.OpenPgpSignatureResult;
 import org.openintents.openpgp.OpenPgpSignatureResult.AutocryptPeerResult;
 import org.openintents.openpgp.util.OpenPgpApi;
+import org.openintents.openpgp.util.OpenPgpUtils;
 import org.sufficientlysecure.keychain.Constants;
+import org.sufficientlysecure.keychain.daos.KeyWritableRepository;
 import org.sufficientlysecure.keychain.model.SubKey.UnifiedKeyInfo;
 import org.sufficientlysecure.keychain.KeychainApplication;
 import org.sufficientlysecure.keychain.analytics.AnalyticsManager;
 import org.sufficientlysecure.keychain.operations.BackupOperation;
+import org.sufficientlysecure.keychain.operations.EditKeyOperation;
 import org.sufficientlysecure.keychain.operations.results.DecryptVerifyResult;
 import org.sufficientlysecure.keychain.operations.results.ExportResult;
+import org.sufficientlysecure.keychain.operations.results.OperationResult;
 import org.sufficientlysecure.keychain.operations.results.OperationResult.LogEntryParcel;
 import org.sufficientlysecure.keychain.operations.results.PgpSignEncryptResult;
 import org.sufficientlysecure.keychain.pgp.CanonicalizedPublicKeyRing;
 import org.sufficientlysecure.keychain.pgp.DecryptVerifySecurityProblem;
+import org.sufficientlysecure.keychain.pgp.KeyRing;
 import org.sufficientlysecure.keychain.pgp.PgpDecryptVerifyInputParcel;
 import org.sufficientlysecure.keychain.pgp.PgpDecryptVerifyOperation;
 import org.sufficientlysecure.keychain.pgp.PgpSecurityConstants.OpenKeychainCompressionAlgorithmTags;
@@ -82,6 +89,8 @@ import org.sufficientlysecure.keychain.daos.OverriddenWarningsDao;
 import org.sufficientlysecure.keychain.remote.OpenPgpServiceKeyIdExtractor.KeyIdResult;
 import org.sufficientlysecure.keychain.remote.OpenPgpServiceKeyIdExtractor.KeyIdResultStatus;
 import org.sufficientlysecure.keychain.service.BackupKeyringParcel;
+import org.sufficientlysecure.keychain.service.ChangeUnlockParcel;
+import org.sufficientlysecure.keychain.service.SaveKeyringParcel;
 import org.sufficientlysecure.keychain.service.input.CryptoInputParcel;
 import org.sufficientlysecure.keychain.service.input.RequiredInputParcel;
 import org.sufficientlysecure.keychain.ui.util.KeyFormattingUtils;
@@ -254,7 +263,7 @@ public class OpenPgpService extends Service {
                 EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
 
                 // Add any existing key ids with encrypt-on-receipt key IDs
-                Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds(true);
+                Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds(false);
                 long[] eorKeyIds = new long[setKeyIds.size()];
                 int i = 0;
                 for (long keyId : setKeyIds) {
@@ -974,6 +983,63 @@ public class OpenPgpService extends Service {
         }
     }
 
+    private Intent createEncryptOnReceiptKey(Intent data) {
+        try {
+            // Generate new key
+            String keyName = data.getStringExtra(OpenPgpApi.EXTRA_NAME);
+            String keyEmail = data.getStringExtra(OpenPgpApi.EXTRA_EMAIL);
+
+
+            // Then add it like a normal EOR key
+            EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
+            EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
+            // TODO: Assert that these values exist
+            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
+            byte[] keyToAdd = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+            String packageName = mApiPermissionHelper.getCurrentCallingPackage();
+
+            Timber.d("createEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToAdd);
+
+            eorInteractor.updateEncryptOnReceiptKey(packageName, keyToAdd);
+
+            Intent result = new Intent();
+            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+            return result;
+        } catch (Exception e) {
+            Timber.d(e, "exception in addEncryptOnReceiptKey");
+            return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, e.getMessage());
+        }
+    }
+
+    // TODO: E3 Separate with other EOR key creation stuff
+    private OperationResult createEorKeyOperation(final String keyName, final String keyEmail, final String passphraseStr) {
+        final CryptoInputParcel cryptoInput = CryptoInputParcel.createCryptoInputParcel(new Date());
+        final SaveKeyringParcel saveKeyParcel = createSaveKeyringParcel(keyName, keyEmail, passphraseStr);
+        KeyWritableRepository keyRepository = KeyWritableRepository.create(getBaseContext());
+        AtomicBoolean operationCancelledBoolean = new AtomicBoolean(false);
+        final EditKeyOperation op = new EditKeyOperation(getBaseContext(), keyRepository, null, operationCancelledBoolean);
+
+        return op.execute(saveKeyParcel, cryptoInput);
+    }
+
+    // TODO: E3 Separate with other EOR key creation stuff
+    private static SaveKeyringParcel createSaveKeyringParcel(final String keyName, final String keyEmail, final String passphraseStr) {
+        SaveKeyringParcel.Builder builder = SaveKeyringParcel.buildNewKeyringParcel();
+        Constants.addDefaultSubkeys(builder);
+        Passphrase passphrase = new Passphrase(passphraseStr);
+
+        if (!passphrase.isEmpty()) {
+            builder.setNewUnlock(ChangeUnlockParcel.createUnLockParcelForNewKey(passphrase));
+        } else {
+            builder.setNewUnlock(null);
+        }
+
+        String userId = KeyRing.createUserId(new OpenPgpUtils.UserId(keyName, keyEmail, null));
+        builder.addUserId(userId);
+        builder.setChangePrimaryUserId(userId);
+        return builder.build();
+    }
+
     private Intent checkPermissionImpl(@NonNull Intent data) {
         Intent permissionIntent = mApiPermissionHelper.isAllowedOrReturnIntent(data);
         if (permissionIntent != null) {
@@ -1171,6 +1237,9 @@ public class OpenPgpService extends Service {
             }
             case OpenPgpApi.ACTION_ADD_ENCRYPT_ON_RECEIPT_KEY: {
                 return addEncryptOnReceiptKey(data);
+            }
+            case OpenPgpApi.ACTION_CREATE_ENCRYPT_ON_RECEIPT_KEY: {
+                return createEncryptOnReceiptKey(data);
             }
             default: {
                 return null;

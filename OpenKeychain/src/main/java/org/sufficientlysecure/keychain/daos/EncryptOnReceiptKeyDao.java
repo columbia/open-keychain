@@ -87,7 +87,7 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
 
     private void ensureEorKeyExists(String packageName, String identifier) {
         InsertKey insertStatement = new InsertKey(getWritableDb());
-        insertStatement.bind(packageName, identifier, false);
+        insertStatement.bind(packageName, identifier, true);
         insertStatement.executeInsert();
     }
 }
