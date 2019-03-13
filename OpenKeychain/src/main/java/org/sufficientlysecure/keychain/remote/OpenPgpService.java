@@ -65,6 +65,7 @@ import org.sufficientlysecure.keychain.analytics.AnalyticsManager;
 import org.sufficientlysecure.keychain.operations.BackupOperation;
 import org.sufficientlysecure.keychain.operations.EditKeyOperation;
 import org.sufficientlysecure.keychain.operations.results.DecryptVerifyResult;
+import org.sufficientlysecure.keychain.operations.results.EditKeyResult;
 import org.sufficientlysecure.keychain.operations.results.ExportResult;
 import org.sufficientlysecure.keychain.operations.results.OperationResult;
 import org.sufficientlysecure.keychain.operations.results.OperationResult.LogEntryParcel;
@@ -988,23 +989,15 @@ public class OpenPgpService extends Service {
             // Generate new key
             String keyName = data.getStringExtra(OpenPgpApi.EXTRA_NAME);
             String keyEmail = data.getStringExtra(OpenPgpApi.EXTRA_EMAIL);
+            final EditKeyResult createKeyResult = createEorKeyOperation(keyName, keyEmail, null);
+            if (createKeyResult.success()) {
+                Intent addKeyData = new Intent();
+                addKeyData.putExtra(OpenPgpApi.EXTRA_KEY_ID, createKeyResult.mMasterKeyId);
 
+                return addEncryptOnReceiptKey(addKeyData);
+            }
 
-            // Then add it like a normal EOR key
-            EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
-            EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
-            // TODO: Assert that these values exist
-            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
-            byte[] keyToAdd = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
-            String packageName = mApiPermissionHelper.getCurrentCallingPackage();
-
-            Timber.d("createEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToAdd);
-
-            eorInteractor.updateEncryptOnReceiptKey(packageName, keyToAdd);
-
-            Intent result = new Intent();
-            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
-            return result;
+            return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, "Failed to create encrypt on receipt key");
         } catch (Exception e) {
             Timber.d(e, "exception in addEncryptOnReceiptKey");
             return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, e.getMessage());
@@ -1012,7 +1005,7 @@ public class OpenPgpService extends Service {
     }
 
     // TODO: E3 Separate with other EOR key creation stuff
-    private OperationResult createEorKeyOperation(final String keyName, final String keyEmail, final String passphraseStr) {
+    private EditKeyResult createEorKeyOperation(final String keyName, final String keyEmail, final String passphraseStr) {
         final CryptoInputParcel cryptoInput = CryptoInputParcel.createCryptoInputParcel(new Date());
         final SaveKeyringParcel saveKeyParcel = createSaveKeyringParcel(keyName, keyEmail, passphraseStr);
         KeyWritableRepository keyRepository = KeyWritableRepository.create(getBaseContext());
