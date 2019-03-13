@@ -989,12 +989,12 @@ public class OpenPgpService extends Service {
             // Generate new key
             String keyName = data.getStringExtra(OpenPgpApi.EXTRA_NAME);
             String keyEmail = data.getStringExtra(OpenPgpApi.EXTRA_EMAIL);
-            final EditKeyResult createKeyResult = createEorKeyOperation(keyName, keyEmail, null);
+            final EditKeyResult createKeyResult = createEorKeyOperation(keyName, keyEmail, "");
             if (createKeyResult.success()) {
-                Intent addKeyData = new Intent();
-                addKeyData.putExtra(OpenPgpApi.EXTRA_KEY_ID, createKeyResult.mMasterKeyId);
-
-                return addEncryptOnReceiptKey(addKeyData);
+                Intent result = new Intent();
+                result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+                result.putExtra(OpenPgpApi.EXTRA_KEY_ID, createKeyResult.mMasterKeyId);
+                return result;
             }
 
             return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, "Failed to create encrypt on receipt key");
@@ -1010,7 +1010,20 @@ public class OpenPgpService extends Service {
         final SaveKeyringParcel saveKeyParcel = createSaveKeyringParcel(keyName, keyEmail, passphraseStr);
         KeyWritableRepository keyRepository = KeyWritableRepository.create(getBaseContext());
         AtomicBoolean operationCancelledBoolean = new AtomicBoolean(false);
-        final EditKeyOperation op = new EditKeyOperation(getBaseContext(), keyRepository, null, operationCancelledBoolean);
+
+        Progressable asyncProgressable = new Progressable() {
+            @Override
+            public void setPreventCancel() {
+
+            }
+
+            @Override
+            public void setProgress(Integer resourceId, int current, int total) {
+
+            }
+        };
+
+        final EditKeyOperation op = new EditKeyOperation(getBaseContext(), keyRepository, asyncProgressable, operationCancelledBoolean);
 
         return op.execute(saveKeyParcel, cryptoInput);
     }
