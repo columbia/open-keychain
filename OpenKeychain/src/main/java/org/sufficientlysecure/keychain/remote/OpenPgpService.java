@@ -1046,6 +1046,36 @@ public class OpenPgpService extends Service {
         return builder.build();
     }
 
+    private Intent getEncryptOnReceiptPublicKeys(Intent data) {
+        try {
+            Timber.d("Got encrypt on receipt public keys request");
+
+            // TODO E3: Get only ones for the requested email.
+            final long[] eorKeyIds = getEorKeyIds(false);
+
+            Intent result = new Intent();
+            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+            result.putExtra(OpenPgpApi.EXTRA_KEY_IDS, eorKeyIds);
+            return result;
+        }  catch (Exception e) {
+            Timber.d(e, "exception in getEncryptOnReceiptPublicKeys");
+            return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, e.getMessage());
+        }
+    }
+
+    // TODO: E3 let it get only ones for a specified email.
+    private long[] getEorKeyIds(final boolean verifiedOnly) {
+        EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
+        Set<Long> setKeyIds = e3KeyDao.getMasterKeyIds(verifiedOnly);
+        long[] eorKeyIds = new long[setKeyIds.size()];
+        int i = 0;
+        for (long keyId : setKeyIds) {
+            eorKeyIds[i++] = keyId;
+        }
+
+        return eorKeyIds;
+    }
+
     private Intent checkPermissionImpl(@NonNull Intent data) {
         Intent permissionIntent = mApiPermissionHelper.isAllowedOrReturnIntent(data);
         if (permissionIntent != null) {
@@ -1246,6 +1276,9 @@ public class OpenPgpService extends Service {
             }
             case OpenPgpApi.ACTION_CREATE_ENCRYPT_ON_RECEIPT_KEY: {
                 return createEncryptOnReceiptKey(data);
+            }
+            case OpenPgpApi.ACTION_GET_ENCRYPT_ON_RECEIPT_PUBLIC_KEYS: {
+                return getEncryptOnReceiptPublicKeys(data);
             }
             default: {
                 return null;
