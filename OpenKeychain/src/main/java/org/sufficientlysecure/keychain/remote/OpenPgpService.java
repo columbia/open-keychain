@@ -984,6 +984,28 @@ public class OpenPgpService extends Service {
         }
     }
 
+    private Intent deleteEncryptOnReceiptKey(Intent data) {
+        try {
+            EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
+            EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
+            // TODO: Assert that these values exist
+            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
+            byte[] keyToDelete = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+            String packageName = mApiPermissionHelper.getCurrentCallingPackage();
+
+            Timber.d("deleteEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToDelete);
+
+            eorInteractor.deleteEncryptOnReceiptKey(packageName, keyToDelete);
+
+            Intent result = new Intent();
+            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+            return result;
+        } catch (Exception e) {
+            Timber.d(e, "exception in deleteEncryptOnReceiptKey");
+            return createErrorResultIntent(OpenPgpError.GENERIC_ERROR, e.getMessage());
+        }
+    }
+
     private Intent createEncryptOnReceiptKey(Intent data) {
         try {
             // Generate new key
@@ -1273,6 +1295,9 @@ public class OpenPgpService extends Service {
             }
             case OpenPgpApi.ACTION_ADD_ENCRYPT_ON_RECEIPT_KEY: {
                 return addEncryptOnReceiptKey(data);
+            }
+            case OpenPgpApi.ACTION_DELETE_ENCRYPT_ON_RECEIPT_KEY: {
+                return deleteEncryptOnReceiptKey(data);
             }
             case OpenPgpApi.ACTION_CREATE_ENCRYPT_ON_RECEIPT_KEY: {
                 return createEncryptOnReceiptKey(data);

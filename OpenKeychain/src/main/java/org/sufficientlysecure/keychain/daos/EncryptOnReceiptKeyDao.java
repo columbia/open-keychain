@@ -5,6 +5,7 @@ import android.database.Cursor;
 
 import com.squareup.sqldelight.SqlDelightQuery;
 
+import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.DeleteByMasterKeyId;
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.InsertKey;
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.UpdateKey;
 import org.sufficientlysecure.keychain.EncryptOnReceiptKeysModel.UpdateKeyWithVerification;
@@ -41,6 +42,15 @@ public class EncryptOnReceiptKeyDao extends AbstractDao {
         updateStatement.bind(packageName, identifier, masterKeyId);
         updateStatement.executeUpdateDelete();
         Timber.d("updateKey masterKeyId=%s, identifier=%s", masterKeyId, identifier);
+
+        getDatabaseNotifyManager().notifyEncryptOnReceiptUpdate(masterKeyId);
+    }
+
+    public void deleteKey(String packageName, long masterKeyId) {
+        DeleteByMasterKeyId deleteStatement = new DeleteByMasterKeyId(getWritableDb());
+        deleteStatement.bind(packageName, masterKeyId);
+        deleteStatement.executeUpdateDelete();
+        Timber.d("deleteKey masterKeyId=%s", masterKeyId);
 
         getDatabaseNotifyManager().notifyEncryptOnReceiptUpdate(masterKeyId);
     }
