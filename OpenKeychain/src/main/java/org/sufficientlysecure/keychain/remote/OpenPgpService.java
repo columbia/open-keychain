@@ -94,6 +94,9 @@ import org.sufficientlysecure.keychain.service.ChangeUnlockParcel;
 import org.sufficientlysecure.keychain.service.SaveKeyringParcel;
 import org.sufficientlysecure.keychain.service.input.CryptoInputParcel;
 import org.sufficientlysecure.keychain.service.input.RequiredInputParcel;
+import org.sufficientlysecure.keychain.ui.keyview.loader.IdentityDao;
+import org.sufficientlysecure.keychain.ui.keyview.loader.IdentityDao.IdentityInfo;
+import org.sufficientlysecure.keychain.ui.keyview.loader.IdentityDao.UserIdInfo;
 import org.sufficientlysecure.keychain.ui.util.KeyFormattingUtils;
 import org.sufficientlysecure.keychain.ui.util.QrCodeUtils;
 import org.sufficientlysecure.keychain.util.InputData;
@@ -989,13 +992,12 @@ public class OpenPgpService extends Service {
             EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
             EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
             // TODO: Assert that these values exist
-            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, Constants.key.none);
             byte[] keyToDelete = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
             String packageName = mApiPermissionHelper.getCurrentCallingPackage();
 
-            Timber.d("deleteEncryptOnReceiptKey got values (keyId=%s, keyToAdd=%s)", keyId, keyToDelete);
+            Long deletedKeyId = eorInteractor.deleteEncryptOnReceiptKey(packageName, keyToDelete);
 
-            eorInteractor.deleteEncryptOnReceiptKey(packageName, keyToDelete);
+            Timber.d("deleteEncryptOnReceiptKey deleted key (keyId=%s, keyToAdd=%s)", deletedKeyId, keyToDelete);
 
             Intent result = new Intent();
             result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
@@ -1074,10 +1076,12 @@ public class OpenPgpService extends Service {
 
             // TODO E3: Get only ones for the requested email.
             final long[] eorKeyIds = getEorKeyIds(false);
+            final String[] eorKeyNames = getEorKeyNames(eorKeyIds);
 
             Intent result = new Intent();
             result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
             result.putExtra(OpenPgpApi.EXTRA_KEY_IDS, eorKeyIds);
+            result.putExtra(OpenPgpApi.EXTRA_NAMES, eorKeyNames);
             return result;
         }  catch (Exception e) {
             Timber.d(e, "exception in getEncryptOnReceiptPublicKeys");
@@ -1096,6 +1100,26 @@ public class OpenPgpService extends Service {
         }
 
         return eorKeyIds;
+    }
+
+    private String[] getEorKeyNames(final long[] eorKeyIds) {
+        final String[] eorKeyNames = new String[eorKeyIds.length];
+        IdentityDao identityDao = IdentityDao.getInstance(getBaseContext());
+        int i = 0;
+
+        for (long eorKeyId : eorKeyIds) {
+            List<IdentityInfo> identityInfos = identityDao.getIdentityInfos(eorKeyId, false);
+
+            for (IdentityInfo identityInfo : identityInfos) {
+                if (identityInfo instanceof UserIdInfo) {
+                    eorKeyNames[i] = ((UserIdInfo) identityInfo).getName();
+                    break;
+                }
+            }
+
+        }
+
+        return eorKeyNames;
     }
 
     private Intent checkPermissionImpl(@NonNull Intent data) {

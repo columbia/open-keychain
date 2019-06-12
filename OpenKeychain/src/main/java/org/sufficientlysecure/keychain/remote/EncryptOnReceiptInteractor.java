@@ -49,15 +49,18 @@ public class EncryptOnReceiptInteractor {
         e3KeyDataDao.updateKey(packageName, UUID.randomUUID().toString(), newMasterKeyId);
     }
 
-    public void deleteEncryptOnReceiptKey(String packageName, byte[] keyData) {
+    public Long deleteEncryptOnReceiptKey(String packageName, byte[] keyData) {
         UncachedKeyRing uncachedKeyRing = parseKeyData(keyData);
 
         if (uncachedKeyRing == null) {
-            return;
+            return null;
         }
 
-        Timber.d("deleteEncryptOnReceiptKey deleting key with masterKeyId=%s", uncachedKeyRing.getMasterKeyId());
-        e3KeyDataDao.deleteKey(packageName, uncachedKeyRing.getMasterKeyId());
+        Long masterKeyId = uncachedKeyRing.getMasterKeyId();
+        Timber.d("deleteEncryptOnReceiptKey deleting key with masterKeyId=%s", masterKeyId);
+        e3KeyDataDao.deleteKey(packageName, masterKeyId);
+
+        return masterKeyId;
     }
 
     @Nullable
