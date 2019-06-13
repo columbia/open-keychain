@@ -992,15 +992,18 @@ public class OpenPgpService extends Service {
             EncryptOnReceiptKeyDao e3KeyDao = EncryptOnReceiptKeyDao.getInstance(getBaseContext());
             EncryptOnReceiptInteractor eorInteractor = EncryptOnReceiptInteractor.getInstance(getBaseContext(), e3KeyDao);
             // TODO: Assert that these values exist
-            byte[] keyToDelete = data.getByteArrayExtra(OpenPgpApi.EXTRA_ASCII_ARMORED_KEY);
+            long keyId = data.getLongExtra(OpenPgpApi.EXTRA_KEY_ID, 0L);
             String packageName = mApiPermissionHelper.getCurrentCallingPackage();
 
-            Long deletedKeyId = eorInteractor.deleteEncryptOnReceiptKey(packageName, keyToDelete);
-
-            Timber.d("deleteEncryptOnReceiptKey deleted key (keyId=%s, keyToAdd=%s)", deletedKeyId, keyToDelete);
-
+            Long deletedKeyId = eorInteractor.deleteEncryptOnReceiptKey(packageName, keyId);
             Intent result = new Intent();
-            result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+
+            if (deletedKeyId != null) {
+                Timber.d("deleteEncryptOnReceiptKey deleted key (keyId=%s, keyToAdd=%s)", deletedKeyId, keyId);
+                result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_SUCCESS);
+            } else {
+                result.putExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_ERROR);
+            }
             return result;
         } catch (Exception e) {
             Timber.d(e, "exception in deleteEncryptOnReceiptKey");
