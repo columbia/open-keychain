@@ -1115,7 +1115,7 @@ public class OpenPgpService extends Service {
 
             for (IdentityInfo identityInfo : identityInfos) {
                 if (identityInfo instanceof UserIdInfo) {
-                    eorKeyNames[i] = ((UserIdInfo) identityInfo).getName();
+                    eorKeyNames[i++] = ((UserIdInfo) identityInfo).getName();
                     break;
                 }
             }
